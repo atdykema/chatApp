@@ -3,12 +3,13 @@ import socket
 import sys, tty, termios
 import pickle
 import os
+from variables import *
 
 
 # alias=input('Type alias')
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(('127.0.0.1', 59007))
+client.connect(('127.0.0.1', 59000))
 
 def client_receive():
     while True:
