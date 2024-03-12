@@ -6,7 +6,7 @@ from variables import *
 from player import *
 
 host = "127.0.0.1"
-port = 59000
+port = PORT
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,13 +21,13 @@ def receive():
 
         if len(clients) < MAX_PLAYERS:
             print(f'connection is established with {str(address)}')
-            client.send('alias?: '.encode('utf-8'))
-            alias = client.recv(1024)
-            player = Player(alias)
+            #client.send('alias?: '.encode('utf-8'))
+            #alias = client.recv(1024)
+            player = Player(None)
             clients[player.player_id] = client
             player_objs[player.player_id] = player
             world_map[player.location[0]][player.location[1]].players.add(player.player_id)
-            print(f'The alias of this client is {alias}'.encode('utf-8'))
+            #print(f'The alias of this client is {alias}'.encode('utf-8'))
 
             update_server_thread = threading.Thread(target = update_server, args=(player.player_id, ))
             update_server_thread.start()

@@ -5,3 +5,6 @@ MAX_VIEWBOX = [3, 3]
 
 player_objs = {}
 clients = {}
+
+
+PORT = 59001
