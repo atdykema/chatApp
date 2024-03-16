@@ -1,8 +1,8 @@
 import uuid
-from variables import *
+from server import server_settings
 
 class Player:
-    def __init__(self, alias, location=PLAYER_SPAWN, skills=None, inventory=None, equipment=None):
+    def __init__(self, alias, location=server_settings.PLAYER_SPAWN, skills=None, inventory=None, equipment=None):
         self.player_id = uuid.uuid4().hex
         self.entity_id = 'player'
         self.alias = alias
