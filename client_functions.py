@@ -5,6 +5,7 @@ import os
 import zlib
 import struct
 import time
+import json
 
 from client import ClientState, client_settings
 from client_utility import create_packet, extract_packet
@@ -55,6 +56,32 @@ def wait_for_connection_update():
                 client_settings.client_state = ClientState.DISCONNECTED
                 print("Your connection request was denied by server")
 
+'''
+def build_viewbox(map_update, player, MAX_VIEWBOX, MAP_DIMENSIONS, ):
+
+    viewbox = [([None] * ((MAX_VIEWBOX[0] * 2 ) - 1)) for i in range((MAX_VIEWBOX[1] * 2) - 1)]
+
+    left_most_player_view = (player.location[0] - MAX_VIEWBOX[0] if player.location[0] - MAX_VIEWBOX[0] > 0 else 0)
+    right_most_player_view = player.location[0] + MAX_VIEWBOX[0] if player.location[0] + MAX_VIEWBOX[0] < MAP_DIMENSIONS[0] else MAP_DIMENSIONS[0]
+
+    top_most_player_view = player.location[1] - MAX_VIEWBOX[1] if player.location[1] - MAX_VIEWBOX[1] > 0 else 0
+    bottom_most_player_view = player.location[1] + MAX_VIEWBOX[1] if player.location[1] + MAX_VIEWBOX[1] < MAP_DIMENSIONS[1] else MAP_DIMENSIONS[1]
+
+    for i in range(len(viewbox)):
+        vert_pos = top_most_player_view + i
+        if vert_pos > MAP_DIMENSIONS[1]:
+            continue
+        for j in range(len(viewbox[i])):
+            horiz_pos = left_most_player_view + j
+            if horiz_pos > MAP_DIMENSIONS[0]:
+                continue
+            if player.location == [horiz_pos, vert_pos]:
+                viewbox[i][j] = player.indicator
+            else:
+                viewbox[i][j] = map_update[horiz_pos][vert_pos].properties.tile_texture
+    
+    return viewbox
+'''
 
 def client_receive():
 
@@ -62,9 +89,15 @@ def client_receive():
         try:
             packet = client_settings.client_socket.recv(1024)
 
-            message, udp_header, correct_checksum, current_checksum = extract_packet(packet)
+            udp_header = struct.unpack("!IIII", packet[:16])
 
-            print("client_receive message: ", message)
+            message = packet[16:]
+
+            correct_checksum = udp_header[3]
+
+            current_checksum = zlib.crc32(message)
+
+            message = json.loads(packet[16:])['world_update']
 
             if correct_checksum == current_checksum:
                 if message == 'You are disconnected':
@@ -72,8 +105,8 @@ def client_receive():
                     client_settings.client_state = ClientState.DISCONNECTED
                 else:
                     os.system('clear')
-                    print("\r", message, end="")
-                    time.sleep(.02)
+                    print(message)
+                    #print("\r", message, end="")
         except Exception as e:
             print(e)
 
@@ -125,7 +158,5 @@ def client_send():
             udp_header = struct.pack("!IIII", client_settings.CLIENT_PORT, client_settings.assigned_server_port, len(packet), zlib.crc32(packet))
             
             udp_packet = udp_header + packet
-
-            print(udp_packet)
 
             client_settings.client_socket.sendto(udp_packet, (client_settings.SERVER_ADDRESS, client_settings.assigned_server_port))

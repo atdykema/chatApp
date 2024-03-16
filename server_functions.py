@@ -2,6 +2,7 @@ import threading
 import zlib
 import struct
 import time
+import json
 
 from game import *
 from server import server_connections, server_settings
@@ -108,14 +109,15 @@ def update_clients():
             if server_connections.client_connected[i]:
                 world_update = build_viewbox(current_world_map, server_connections.player_objs[server_connections.player_ids[i]])
                 
-                packet = 'pickle.dumps(world_update)'.encode()
-                
+                packet = json.dumps({'world_update':world_update}).encode()
+               
                 udp_header = struct.pack("!IIII", server_connections.client_port[i], server_connections.PLAYER_SERVER_PORTS[i], len(packet), zlib.crc32(packet))
                 
                 udp_packet = udp_header + packet
 
-                #print(udp_packet)
-                #server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(udp_packet, (server_connections.client_address[i], server_connections.client_port[i]))
+                print(udp_packet)
+
+                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(udp_packet, (server_connections.client_address[i], server_connections.client_port[i]))
         time.sleep(.02)
 
 
@@ -131,7 +133,6 @@ def update_server(index):
         key = int(packet[16:])
         print("update_server: ", key)
         if key == 113:
-            print('inside')
 
             print("server disconnect")
             data = 'You are disconnected'
@@ -159,7 +160,6 @@ def update_server(index):
         elif key == 100:
             move_right(player)
         
-
 def build_viewbox(map_update, player):
 
     viewbox = [([None] * ((server_settings.MAX_VIEWBOX[0] * 2 ) - 1)) for i in range((server_settings.MAX_VIEWBOX[1] * 2) - 1)]
