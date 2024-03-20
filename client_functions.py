@@ -6,6 +6,7 @@ import zlib
 import struct
 import time
 import json
+import pprint
 
 from client import ClientState, client_settings
 from client_utility import create_packet, extract_packet
@@ -87,8 +88,8 @@ def client_receive():
 
     while client_settings.client_state != ClientState.DISCONNECTED:
         try:
-            packet = client_settings.client_socket.recv(1024)
-
+            packet = client_settings.client_socket.recv(2048)
+            #print(vars(client_settings))
             udp_header = struct.unpack("!IIII", packet[:16])
 
             message = packet[16:]
@@ -98,12 +99,14 @@ def client_receive():
             current_checksum = zlib.crc32(message)
 
             message = json.loads(packet[16:])['world_update']
+            #print(message)
 
             if correct_checksum == current_checksum:
                 if message == 'You are disconnected':
                     print("client_receive disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
                 else:
+                    continue
                     os.system('clear')
                     print(message)
                     #print("\r", message, end="")
@@ -127,14 +130,15 @@ def getch(char_width=1):
 def client_send():
 
     while client_settings.client_state == ClientState.CONNECTED:
-
-        key = ord(getch())
+        
+        #key = ord(getch())
+        key = ord(input("Move: "))
         
         if key == 113: #disconnect
             attempts_to_disconnect = 0
             while client_settings.client_state != ClientState.DISCONNECTED:
 
-                if attempts_to_disconnect > 1000:
+                if attempts_to_disconnect > 100:
                     print("client_send disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
 

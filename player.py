@@ -2,22 +2,33 @@ import uuid
 from server import server_settings
 
 class Player:
-    def __init__(self, alias, location=server_settings.PLAYER_SPAWN, skills=None, inventory=None, equipment=None):
+    def __init__(self, alias, location=None, skills=None, inventory=None, equipment=None):
         self.player_id = uuid.uuid4().hex
         self.entity_id = 'player'
         self.alias = alias
-        self.location = location
+
+        if location is None:
+            self.location = [server_settings.PLAYER_SPAWN[0], server_settings.PLAYER_SPAWN[1]]
+        else:
+            self.location = location
 
         if skills is None:
             self.skills = Skills()
+        else:
+            self.skills = skills
 
         if inventory is None:
             self.inventory = Inventory()
+        else:
+            self.inventory = inventory
 
         if equipment is None:
             self.equipment = Equipment()
+        else:
+            self.equipment = equipment
 
-        self.indicator = '*'
+        self.my_indicator = '🤠'
+        self.indicator = '😃'
 
 class Skills:
     def __init__(self):

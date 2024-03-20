@@ -1,8 +1,9 @@
 from game import *
+from server import server_settings
 import uuid
 
 class Tile:
-    def __init__(self, tile_type, properties=None, players=set(), items=set()):
+    def __init__(self, tile_type, properties=None, players=None, items=None):
         self.tile_id = uuid.uuid4().hex
         self.tile_type = tile_type
 
@@ -11,9 +12,16 @@ class Tile:
         else:
             self.properties = tile_properties[tile_type]
                 
+        if players is not None:
+            self.players = players
+        else:
+            self.players = dict()
 
-        self.players = players
-        self.items = items
+        if items is not None:
+            self.items = items
+        else:
+            self.items = dict()
+
 
 class Properties:
     def __init__(self, is_occupied, tile_texture, script):
@@ -30,9 +38,9 @@ tile_scripts = {
 
 tile_texture = {
     'GRASS': '_',
-    'WATER': 'W',
-    'TREE_1': 'T',
-    'WALL_1': '#'
+    'WATER': '🌊',
+    'TREE_1': '🌳',
+    'WALL_1': '🧱'
 }
 
 tile_properties = {
@@ -43,14 +51,16 @@ tile_properties = {
 }
 
 world_map = [
-    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('TREE_1'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('WALL_1'), Tile('GRASS'), Tile('WATER')],
-    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')],
-    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('TREE_1'), Tile('WATER')],
-    [Tile('WATER'), Tile('GRASS'), Tile('WALL_1'), Tile('GRASS'), Tile('WATER')],
-    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')]
+    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('WALL_1'), Tile('TREE_1'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('TREE_1'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('GRASS'), Tile('WATER')],
+    [Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER'), Tile('WATER')]
 ]
+
+server_settings.MAP_DIMENSIONS = [len(world_map), len(world_map[0])]

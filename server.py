@@ -1,14 +1,16 @@
 import socket as s
+import selectors
 
 MAX_PLAYERS = 10
 PLAYER_CONNECTION_SERVER_PORT = 59000
 SERVER_ADDRESS = "127.0.0.1"
 PLAYER_SPAWN = [1, 1]
-MAP_DIMENSIONS = [4, 4]
-MAX_VIEWBOX = [3, 3]
+MAP_DIMENSIONS = [-1, -1]
+MAX_VIEWBOX = [5, 5]
 
 player_request_connection_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
 player_request_connection_socket.bind((SERVER_ADDRESS, PLAYER_CONNECTION_SERVER_PORT))
+
 
 player_connection_ports = []
 player_connection_sockets = []
@@ -26,10 +28,9 @@ class Server:
         self.max_clients = MAX_PLAYERS
         self.connected_clients = 0
         self.player_ids = [None] * MAX_PLAYERS
-        self.player_objs = {}
+        self.player_objs = dict()
         self.client_connected = [False] * MAX_PLAYERS
-        self.client_address = [None] * MAX_PLAYERS
-        self.client_port = [None] * MAX_PLAYERS
+        self.client_address_and_port = [None] * MAX_PLAYERS
         self.PLAYER_SERVER_SOCKETS = player_connection_sockets #array of sockets for player clients
         self.PLAYER_SERVER_PORTS = player_connection_ports #array of ports for player clients
     
