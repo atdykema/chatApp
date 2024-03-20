@@ -106,7 +106,6 @@ def client_receive():
                     print("client_receive disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
                 else:
-                    continue
                     os.system('clear')
                     print(message)
                     #print("\r", message, end="")
@@ -131,8 +130,8 @@ def client_send():
 
     while client_settings.client_state == ClientState.CONNECTED:
         
-        #key = ord(getch())
-        key = ord(input("Move: "))
+        key = ord(getch())
+        #key = ord(input("Move: "))
         
         if key == 113: #disconnect
             attempts_to_disconnect = 0
@@ -142,7 +141,7 @@ def client_send():
                     print("client_send disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
 
-                packet = str(key).encode()
+                packet = (str(key) + f":{client_settings.index}").encode()
 
                 udp_header = struct.pack("!IIII", client_settings.CLIENT_PORT, client_settings.assigned_server_port, len(packet), zlib.crc32(packet))
         
@@ -157,7 +156,7 @@ def client_send():
 
                 
         else:
-            packet = str(key).encode()
+            packet = (str(key) + f":{client_settings.index}").encode()
             
             udp_header = struct.pack("!IIII", client_settings.CLIENT_PORT, client_settings.assigned_server_port, len(packet), zlib.crc32(packet))
             

@@ -9,7 +9,10 @@ MAP_DIMENSIONS = [-1, -1]
 MAX_VIEWBOX = [5, 5]
 
 player_request_connection_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
+player_request_connection_socket.setblocking(False)
 player_request_connection_socket.bind((SERVER_ADDRESS, PLAYER_CONNECTION_SERVER_PORT))
+
+selector = selectors.DefaultSelector()
 
 
 player_connection_ports = []
@@ -33,6 +36,7 @@ class Server:
         self.client_address_and_port = [None] * MAX_PLAYERS
         self.PLAYER_SERVER_SOCKETS = player_connection_sockets #array of sockets for player clients
         self.PLAYER_SERVER_PORTS = player_connection_ports #array of ports for player clients
+        self.selector = selector
     
 class ServerSettings():
     def __init__(self):

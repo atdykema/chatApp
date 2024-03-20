@@ -1,7 +1,7 @@
 import threading
 import socket as s
 
-CLIENT_PORT = 58999
+CLIENT_PORT = 58998
 SERVER_PORT = 59000
 
 CLIENT_ADDRESS = '127.0.0.1'
