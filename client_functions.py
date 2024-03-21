@@ -98,16 +98,16 @@ def client_receive():
 
             current_checksum = zlib.crc32(message)
 
-            message = json.loads(packet[16:])['world_update']
-            #print(message)
-
+            message = json.loads(packet[16:])
+            
+            print(message['message'])
             if correct_checksum == current_checksum:
-                if message == 'You are disconnected':
+                if message['message'] == 'stop':
                     print("client_receive disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
                 else:
                     os.system('clear')
-                    print(message)
+                    print(message['message'])
                     #print("\r", message, end="")
         except Exception as e:
             print(e)

@@ -14,17 +14,11 @@ player_request_connection_socket.bind((SERVER_ADDRESS, PLAYER_CONNECTION_SERVER_
 
 selector = selectors.DefaultSelector()
 
-
-player_connection_ports = []
-player_connection_sockets = []
+PLAYER_CONNECTION_PORTS = []
 
 for i in range(MAX_PLAYERS):
-    player_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
-    player_socket_port = PLAYER_CONNECTION_SERVER_PORT + i + 1
-    player_socket.bind((SERVER_ADDRESS, player_socket_port))
-    player_connection_ports.append(player_socket_port)
-    player_connection_sockets.append(player_socket)
-
+    PLAYER_CONNECTION_PORTS.append(PLAYER_CONNECTION_SERVER_PORT + i + 1)
+print(PLAYER_CONNECTION_PORTS)
 
 class Server:
     def __init__(self):
@@ -34,8 +28,8 @@ class Server:
         self.player_objs = dict()
         self.client_connected = [False] * MAX_PLAYERS
         self.client_address_and_port = [None] * MAX_PLAYERS
-        self.PLAYER_SERVER_SOCKETS = player_connection_sockets #array of sockets for player clients
-        self.PLAYER_SERVER_PORTS = player_connection_ports #array of ports for player clients
+        self.player_connection_sockets = [None] * MAX_PLAYERS #array of sockets for player clients
+        self.PLAYER_CONNECTION_PORTS = PLAYER_CONNECTION_PORTS #array of ports for player clients
         self.selector = selector
     
 class ServerSettings():

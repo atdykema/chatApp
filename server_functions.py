@@ -40,7 +40,12 @@ def add_new_connection(sock, mask):
                     
                     client_index = find_free_client_index()
 
-                    server_connections.selector.register(server_connections.PLAYER_SERVER_SOCKETS[client_index], selectors.EVENT_READ, update_server)
+                    player_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
+                    player_socket_port = server_connections.PLAYER_CONNECTION_PORTS[client_index]
+                    player_socket.bind((server_settings.SERVER_ADDRESS, player_socket_port))
+                    server_connections.player_connection_sockets[client_index] = player_socket
+
+                    server_connections.selector.register(server_connections.player_connection_sockets[client_index], selectors.EVENT_READ, update_server)
 
                     server_connections.client_address_and_port[client_index] = [client_address_and_port[0], client_address_and_port[1]]
                     server_connections.client_connected[client_index] = True
@@ -63,7 +68,7 @@ def add_new_connection(sock, mask):
 
                 client_index = find_existing_client_index([client_address_and_port[0], client_address_and_port[1]])
 
-                data = f'Connection Accepted:{client_index}:{server_connections.PLAYER_SERVER_PORTS[client_index]}'
+                data = f'Connection Accepted:{client_index}:{server_connections.PLAYER_CONNECTION_PORTS[client_index]}'
                 packet = data.encode()
                 checksum = zlib.crc32(packet)
 
@@ -104,11 +109,12 @@ def update_clients():
         
         for i in range(server_connections.max_clients):
             if server_connections.client_connected[i]:
+                print(i)
                 world_update = build_viewbox(current_world_map, server_connections.player_objs[server_connections.player_ids[i]])
                 
-                packet = json.dumps({'world_update':world_update}).encode()
+                packet = json.dumps({'message':world_update}).encode()
                
-                udp_header = struct.pack("!IIII", server_connections.client_address_and_port[i][1], server_connections.PLAYER_SERVER_PORTS[i], len(packet), zlib.crc32(packet))
+                udp_header = struct.pack("!IIII", server_connections.client_address_and_port[i][1], server_connections.PLAYER_CONNECTION_PORTS[i], len(packet), zlib.crc32(packet))
                 
                 udp_packet = udp_header + packet
 
@@ -134,6 +140,10 @@ def update_server(conn, mask):
 
     print("index: ", index)
 
+    if not is_cliented_connected(index):
+        print("ignoring disconnected client")
+        return
+    
     player = server_connections.player_objs[server_connections.player_ids[index]]
     print('moving player: ', player.player_id)
     print(player)
@@ -142,21 +152,26 @@ def update_server(conn, mask):
 
     print("update_server: ", key)
     if key == 113:
-
         print("server disconnect")
-        data = 'You are disconnected'
-        packet = data.encode()
+        data = 'stop'
+        packet = json.dumps({'message':data}).encode()
         checksum = zlib.crc32(packet)
-        udp_header = struct.pack("!IIII", server_connections.client_address_and_port[index][1], server_connections.PLAYER_SERVER_PORTS[index], len(packet), checksum)
+        udp_header = struct.pack("!IIII", server_connections.client_address_and_port[index][1], server_connections.PLAYER_CONNECTION_PORTS[index], len(packet), checksum)
         udp_packet = udp_header + packet
-        for _ in range(10):
-            server_connections.PLAYER_SERVER_SOCKETS[index].sendto(udp_packet, (server_connections.client_address_and_port[index][0], server_connections.client_address_and_port[index][1]))
 
+        print("sending disconnect packet")
+        server_connections.player_connection_sockets[index].sendto(udp_packet, (server_connections.client_address_and_port[index][0], server_connections.client_address_and_port[index][1]))
+        
+        del world_map[player.location[0]][player.location[1]].players[player.player_id]
         del server_connections.player_objs[player.player_id]
         server_connections.client_address_and_port[index] = None
+        #print("bruh: ", index, server_connections.client_connected[index])
         server_connections.client_connected[index] = False
+        #print(index, server_connections.client_connected[index])
         server_connections.connected_clients -= 1
         server_connections.player_ids[index] = None
+        server_connections.selector.unregister(server_connections.player_connection_sockets[index])
+        server_connections.player_connection_sockets[index] = None
                     
         return
         
