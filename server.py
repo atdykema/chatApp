@@ -7,6 +7,7 @@ SERVER_ADDRESS = "127.0.0.1"
 PLAYER_SPAWN = [1, 1]
 MAP_DIMENSIONS = [-1, -1]
 MAX_VIEWBOX = [5, 5]
+TICK_RATE = 1/10
 
 player_request_connection_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
 player_request_connection_socket.setblocking(False)
@@ -41,6 +42,7 @@ class ServerSettings():
         self.MAP_DIMENSIONS = MAP_DIMENSIONS
         self.MAX_VIEWBOX = MAX_VIEWBOX
         self.PLAYER_CONNECTION_SERVER_SOCKET = player_request_connection_socket #inital port used to get assigned port
+        self.TICK_RATE = TICK_RATE
 
 server_connections = Server()
 

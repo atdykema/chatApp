@@ -13,28 +13,19 @@ from map import *
 from server_utility import *
 
 def add_new_connection(sock, mask):
+
     request_connection_packet, client_address_and_port = sock.recvfrom(1024)
 
-    print("request_connection_packet: ", request_connection_packet)
+    message, udp_header, current_checksum, correct_checksum = extract_packet(request_connection_packet)
 
-    print("address: ", client_address_and_port)
-
-    udp_header = struct.unpack("!IIII", request_connection_packet[:16])
-
-    print(udp_header)
-
-    packet_data = request_connection_packet[16:]
-
-    correct_checksum = udp_header[3]
-
-    current_checksum = zlib.crc32(packet_data)
-
-    message = packet_data.decode()
-
-    print(message)
+    print("request_connection_packet: ", request_connection_packet,
+          "address: ", client_address_and_port,
+          "message: ", message)
 
     if correct_checksum == current_checksum and message == 'Connection Request':
             if server_connections.connected_clients < server_settings.MAX_PLAYERS:
+
+                #If the client cant be found to already be connected, attempt to connect the client
                 if find_existing_client_index([client_address_and_port[0], client_address_and_port[1]]) == -1:
                     print(f'Attempting connection with {str(client_address_and_port)}')
                     
@@ -66,30 +57,26 @@ def add_new_connection(sock, mask):
                           server_connections.player_objs[player.player_id])
                     print(server_connections.client_address_and_port)
 
+                #If the client is already found to be connected, skip connection step and return validation of connection
                 client_index = find_existing_client_index([client_address_and_port[0], client_address_and_port[1]])
 
                 data = f'Connection Accepted:{client_index}:{server_connections.PLAYER_CONNECTION_PORTS[client_index]}'
-                packet = data.encode()
-                checksum = zlib.crc32(packet)
 
-                udp_header = struct.pack("!IIII", server_connections.client_address_and_port[client_index][1], server_settings.PLAYER_CONNECTION_SERVER_PORT, len(packet), checksum)
+                packet = create_packet(data, server_connections.client_address_and_port[client_index][1], server_settings.PLAYER_CONNECTION_SERVER_PORT)
 
-                udp_packet = udp_header + packet
-
-                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(udp_packet, (client_address_and_port[0], client_address_and_port[1]))
+                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(packet, (client_address_and_port[0], client_address_and_port[1]))
 
             else:
+                #Server is full
                 data = f'Connection Denied'
-                packet = data.encode()
-                checksum = zlib.crc32(packet)
 
-                udp_header = struct.pack("!IIII", server_connections.client_address_and_port[client_index][1], server_settings.PLAYER_CONNECTION_SERVER_PORT, len(packet), checksum)
+                packet = create_packet(data, server_connections.client_address_and_port[client_index][1], server_settings.PLAYER_CONNECTION_SERVER_PORT)
 
-                udp_packet = udp_header + packet
-
-                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(udp_packet, (client_address_and_port[0], client_address_and_port[1]))
+                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(packet, (client_address_and_port[0], client_address_and_port[1]))
 
 
+#register base server connect port. This is for taking connection requests from clients and then
+#reassigns the client to a different server port
 server_connections.selector.register(server_settings.PLAYER_CONNECTION_SERVER_SOCKET, selectors.EVENT_READ, add_new_connection)
 
 
@@ -98,7 +85,11 @@ def receive():
     while True:
         for key, mask in server_connections.selector.select():
             callback = key.data
-            print("callback: ", callback, "fileobj: ", key.fileobj, "mask: ", mask)
+
+            print("callback: ", callback, 
+                  "fileobj: ", key.fileobj, 
+                  "mask: ", mask)
+            
             callback(key.fileobj, mask)
                 
 
@@ -109,84 +100,74 @@ def update_clients():
         
         for i in range(server_connections.max_clients):
             if server_connections.client_connected[i]:
-                print(i)
                 world_update = build_viewbox(current_world_map, server_connections.player_objs[server_connections.player_ids[i]])
                 
-                packet = json.dumps({'message':world_update}).encode()
-               
-                udp_header = struct.pack("!IIII", server_connections.client_address_and_port[i][1], server_connections.PLAYER_CONNECTION_PORTS[i], len(packet), zlib.crc32(packet))
-                
-                udp_packet = udp_header + packet
+                packet = create_json_packet(world_update,
+                                            server_connections.client_address_and_port[i][1], 
+                                            server_connections.PLAYER_CONNECTION_PORTS[i])
 
-                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(udp_packet, (server_connections.client_address_and_port[i][0], server_connections.client_address_and_port[i][1]))
-        time.sleep(.1)  
+                server_settings.PLAYER_CONNECTION_SERVER_SOCKET.sendto(packet, (server_connections.client_address_and_port[i][0], server_connections.client_address_and_port[i][1]))
+
+        time.sleep(server_settings.TICK_RATE)  
 
 
 def update_server(conn, mask):
     packet, client_address_and_port = conn.recvfrom(1024)
-    print("update_clients packet: ", packet)
-    print("client_address_and_port:  ", client_address_and_port)
 
-    udp_header = struct.unpack('!IIII', packet[:16])
-
-    print(packet[16:].decode())
-    key_and_index = packet[16:].decode().split(':')
-
-    key = int(key_and_index[0])
-
-    index = int(key_and_index[1])
-
-    print("key: ", key)
-
-    print("index: ", index)
-
-    if not is_cliented_connected(index):
-        print("ignoring disconnected client")
-        return
+    print("update_clients packet: ", packet,
+          "client_address_and_port:  ", client_address_and_port)
     
-    player = server_connections.player_objs[server_connections.player_ids[index]]
-    print('moving player: ', player.player_id)
-    print(player)
-    print(index)
-    #checksum
+    message, udp_header, current_checksum, correct_checksum = extract_packet(packet)
 
-    print("update_server: ", key)
-    if key == 113:
-        print("server disconnect")
-        data = 'stop'
-        packet = json.dumps({'message':data}).encode()
-        checksum = zlib.crc32(packet)
-        udp_header = struct.pack("!IIII", server_connections.client_address_and_port[index][1], server_connections.PLAYER_CONNECTION_PORTS[index], len(packet), checksum)
-        udp_packet = udp_header + packet
+    message = packet[16:].decode().split(':')
 
-        print("sending disconnect packet")
-        server_connections.player_connection_sockets[index].sendto(udp_packet, (server_connections.client_address_and_port[index][0], server_connections.client_address_and_port[index][1]))
+    key = int(message[0])
+
+    index = int(message[1])
+
+    print("key: ", key,
+          "index: ", index)
+
+    if correct_checksum == current_checksum:
+        if not is_cliented_connected(index):
+            print("ignoring disconnected client")
+            return
         
-        del world_map[player.location[0]][player.location[1]].players[player.player_id]
-        del server_connections.player_objs[player.player_id]
-        server_connections.client_address_and_port[index] = None
-        #print("bruh: ", index, server_connections.client_connected[index])
-        server_connections.client_connected[index] = False
-        #print(index, server_connections.client_connected[index])
-        server_connections.connected_clients -= 1
-        server_connections.player_ids[index] = None
-        server_connections.selector.unregister(server_connections.player_connection_sockets[index])
-        server_connections.player_connection_sockets[index] = None
-                    
-        return
+        player = server_connections.player_objs[server_connections.player_ids[index]]
+
+        print("update_server: ", key)
+        if key == 113:
+            print("server disconnect")
+            data = 'stop'
+            packet = json.dumps({'message':data}).encode()
+            checksum = zlib.crc32(packet)
+            udp_header = struct.pack("!IIII", server_connections.client_address_and_port[index][1], server_connections.PLAYER_CONNECTION_PORTS[index], len(packet), checksum)
+            udp_packet = udp_header + packet
+
+            print("sending disconnect packet")
+            server_connections.player_connection_sockets[index].sendto(udp_packet, (server_connections.client_address_and_port[index][0], server_connections.client_address_and_port[index][1]))
+            
+            del world_map[player.location[0]][player.location[1]].players[player.player_id]
+            del server_connections.player_objs[player.player_id]
+            server_connections.client_address_and_port[index] = None
+            server_connections.client_connected[index] = False
+            server_connections.connected_clients -= 1
+            server_connections.player_ids[index] = None
+            server_connections.selector.unregister(server_connections.player_connection_sockets[index])
+            server_connections.player_connection_sockets[index] = None
+                        
+            return
         
-    print("current_player_vars: ", vars(player))
-    print("player_objs: ", server_connections.player_objs)
-    print("player_ids: ", server_connections.player_ids)
-    if key == 115:
-        move_down(player)
-    elif key == 119:
-        move_up(player)
-    elif key == 97:
-        move_left(player)
-    elif key == 100:
-        move_right(player)
-        
+        if key == 115:
+            move_down(player)
+        elif key == 119:
+            move_up(player)
+        elif key == 97:
+            move_left(player)
+        elif key == 100:
+            move_right(player)
+
+
 def build_viewbox(map_update, player):
 
     viewbox = [([' '] * ((server_settings.MAX_VIEWBOX[0] * 2 ) - 1)) for i in range((server_settings.MAX_VIEWBOX[1] * 2) - 1)]
