@@ -1,0 +1,36 @@
+Screen {
+    layout: horizontal;
+}
+
+.box {
+    height: 100%;
+    width: 1fr;
+    border: solid green;
+    padding: 0;
+    margin: 0;
+}
+
+.display_row{
+    width: 100%;
+    border: solid purple;
+    align: center middle;
+    padding: 0;
+    margin: 0;
+}
+
+.display_container{
+    width: 100%;
+    border: solid yellow;
+    height: 70vh;
+}
+
+.chatbox_container{
+    height: 30vh;
+    border: solid yellow;
+
+}
+
+.infobox_container{
+    width: 30vw;
+    border: solid blue;
+}

@@ -6,7 +6,8 @@ import zlib
 import struct
 import time
 import json
-import pprint
+
+from clientUI import clientUI
 
 from client import ClientState, client_settings
 from client_utility import create_packet, extract_packet
@@ -57,39 +58,13 @@ def wait_for_connection_update():
                 client_settings.client_state = ClientState.DISCONNECTED
                 print("Your connection request was denied by server")
 
-'''
-def build_viewbox(map_update, player, MAX_VIEWBOX, MAP_DIMENSIONS, ):
-
-    viewbox = [([None] * ((MAX_VIEWBOX[0] * 2 ) - 1)) for i in range((MAX_VIEWBOX[1] * 2) - 1)]
-
-    left_most_player_view = (player.location[0] - MAX_VIEWBOX[0] if player.location[0] - MAX_VIEWBOX[0] > 0 else 0)
-    right_most_player_view = player.location[0] + MAX_VIEWBOX[0] if player.location[0] + MAX_VIEWBOX[0] < MAP_DIMENSIONS[0] else MAP_DIMENSIONS[0]
-
-    top_most_player_view = player.location[1] - MAX_VIEWBOX[1] if player.location[1] - MAX_VIEWBOX[1] > 0 else 0
-    bottom_most_player_view = player.location[1] + MAX_VIEWBOX[1] if player.location[1] + MAX_VIEWBOX[1] < MAP_DIMENSIONS[1] else MAP_DIMENSIONS[1]
-
-    for i in range(len(viewbox)):
-        vert_pos = top_most_player_view + i
-        if vert_pos > MAP_DIMENSIONS[1]:
-            continue
-        for j in range(len(viewbox[i])):
-            horiz_pos = left_most_player_view + j
-            if horiz_pos > MAP_DIMENSIONS[0]:
-                continue
-            if player.location == [horiz_pos, vert_pos]:
-                viewbox[i][j] = player.indicator
-            else:
-                viewbox[i][j] = map_update[horiz_pos][vert_pos].properties.tile_texture
-    
-    return viewbox
-'''
 
 def client_receive():
 
     while client_settings.client_state != ClientState.DISCONNECTED:
         try:
             packet = client_settings.client_socket.recv(2048)
-            #print(vars(client_settings))
+            
             udp_header = struct.unpack("!IIII", packet[:16])
 
             message = packet[16:]
@@ -100,15 +75,15 @@ def client_receive():
 
             message = json.loads(packet[16:])
             
-            print(message['message'])
             if correct_checksum == current_checksum:
                 if message['message'] == 'stop':
                     print("client_receive disconnect")
                     client_settings.client_state = ClientState.DISCONNECTED
                 else:
-                    os.system('clear')
-                    print(message['message'])
-                    #print("\r", message, end="")
+                    #clientUI.render(message)
+                    #os.system('clear')
+                    #print(message['message'])
+                    client_settings.update = message
         except Exception as e:
             print(e)
 
@@ -147,12 +122,9 @@ def client_send():
         
                 udp_packet = udp_header + packet
 
-                print(udp_packet)
-
                 client_settings.client_socket.sendto(udp_packet, (client_settings.SERVER_ADDRESS, client_settings.assigned_server_port))
 
                 attempts_to_disconnect += 1
-                print(attempts_to_disconnect)
 
                 
         else:

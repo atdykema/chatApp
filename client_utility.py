@@ -1,5 +1,6 @@
 import zlib
 import struct
+import json
 
 from client import client_settings
 
