@@ -100,7 +100,6 @@ def client_receive():
 
             message = json.loads(packet[16:])
             
-            print(message['message'])
             if correct_checksum == current_checksum:
                 if message['message'] == 'stop':
                     print("client_receive disconnect")

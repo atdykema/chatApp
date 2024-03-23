@@ -7,6 +7,16 @@ SERVER_PORT = 59000
 CLIENT_ADDRESS = '127.0.0.1'
 SERVER_ADDRESS = '127.0.0.1'
 
+client_not_bound = True
+
+while client_not_bound:
+    client_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
+    try:
+        client_socket.bind((CLIENT_ADDRESS, CLIENT_PORT))
+        client_not_bound = False
+    except:
+        CLIENT_PORT -= 1
+
 client_socket = s.socket(s.AF_INET, s.SOCK_DGRAM)
 client_socket.bind((CLIENT_ADDRESS, CLIENT_PORT))
 
